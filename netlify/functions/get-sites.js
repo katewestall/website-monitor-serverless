@@ -1,14 +1,27 @@
 // netlify/functions/get-sites.js
-exports.handler = async (event, context) => {
-    // In a real app, fetch this from your database.
-    // For this demo, we return a mock list.
-    const mockSites = [
-        { id: '1', url: 'https://www.nasa.gov/', status: 'OK', last_scanned: new Date().toISOString() },
-        { id: '2', url: 'https://example.com', status: 'CHANGED', last_scanned: new Date(Date.now() - 3600000).toISOString() }
-    ];
+const { getStore } = require('@netlify/blobs');
 
-    return {
-        statusCode: 200,
-        body: JSON.stringify(mockSites),
-    };
+exports.handler = async (event, context) => {
+    try {
+        // Connect to our Data Entities store
+        const store = getStore('monitored-sites');
+
+        // Get a list of all our monitored sites
+        const { blobs } = await store.list();
+
+        // Fetch the details for each site
+        const sites = await Promise.all(
+            blobs.map(async (blob) => {
+                const siteData = await store.get(blob.name);
+                return JSON.parse(siteData);
+            })
+        );
+
+        return {
+            statusCode: 200,
+            body: JSON.stringify(sites),
+        };
+    } catch (error) {
+        return { statusCode: 500, body: JSON.stringify({ error: `Failed to fetch sites: ${error.message}` }) };
+    }
 };
