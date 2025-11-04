@@ -1,0 +1,7 @@
+# netlify.toml
+[build]
+  # This command is not strictly needed for this project but is good practice
+  command = "echo 'No build command required'"
+
+[functions]
+  directory = "netlify/functions"
