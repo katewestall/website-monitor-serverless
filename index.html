@@ -3,42 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Website Process Monitor (Serverless)</title>
+    <title>Website Process Monitor</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <style>
-        .loader { /* ... same loader styles as before ... */ }
-        @-webkit-keyframes spinner { 0% { -webkit-transform: rotate(0deg); } 100% { -webkit-transform: rotate(360deg); } }
-        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loader {
+            border-top-color: #3498db;
+            -webkit-animation: spinner 1.5s linear infinite;
+            animation: spinner 1.5s linear infinite;
+        }
+        @-webkit-keyframes spinner {
+            0% { -webkit-transform: rotate(0deg); }
+            100% { -webkit-transform: rotate(360deg); }
+        }
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
     <div class="container mx-auto p-4 max-w-7xl">
         <header class="bg-white shadow-md rounded-lg p-6 mb-6">
             <h1 class="text-3xl font-bold text-blue-600"><i class="fas fa-chart-line mr-2"></i>Website Process Monitor</h1>
-            <p class="text-gray-600 mt-2">Monitor your website's content and get notified of any changes. Powered by Serverless Functions.</p>
+            <p class="text-gray-600 mt-2">Monitor your website's content and get notified of any changes.</p>
         </header>
 
         <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Column: Add New Monitor -->
             <section class="lg:col-span-1">
                 <div class="bg-white p-6 rounded-lg shadow-md">
                     <h2 class="text-xl font-semibold mb-4 text-gray-700"><i class="fas fa-plus-circle mr-2"></i>Add New Monitor</h2>
                     <form id="monitor-form">
                         <div class="mb-4">
                             <label for="url" class="block text-sm font-medium text-gray-700">Website URL</label>
-                            <input type="url" id="url" name="url" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="https://example.com">
+                            <input type="url" id="url" name="url" required
+                                class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                placeholder="https://example.com">
                         </div>
                         <div class="mb-4">
                             <label for="email" class="block text-sm font-medium text-gray-700">Notification Email</label>
-                            <input type="email" id="email" name="email" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="you@example.com">
+                            <input type="email" id="email" name="email" required
+                                class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                placeholder="you@example.com">
                         </div>
-                        <button type="submit" id="submit-btn" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300 flex items-center justify-center">
+                        <button type="submit" id="submit-btn"
+                            class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300 flex items-center justify-center">
                             <span id="btn-text">Start Monitoring</span>
                             <div id="btn-loader" class="loader border-4 border-gray-200 rounded-full w-5 h-5 ml-2 hidden"></div>
                         </button>
                     </form>
                     <div id="form-feedback" class="mt-4 text-center hidden"></div>
                 </div>
+
+                <!-- Visual Preview -->
                 <div id="preview-container" class="bg-white p-6 rounded-lg shadow-md mt-6 hidden">
                     <h2 class="text-xl font-semibold mb-4 text-gray-700"><i class="fas fa-eye mr-2"></i>Visual Preview</h2>
                     <div class="border border-gray-300 rounded-lg overflow-hidden" style="height: 400px;">
@@ -47,13 +65,17 @@
                 </div>
             </section>
 
+            <!-- Right Column: Monitored Sites & Alerts -->
             <section class="lg:col-span-2">
+                <!-- Active Monitors -->
                 <div class="bg-white p-6 rounded-lg shadow-md mb-6">
                     <h2 class="text-xl font-semibold mb-4 text-gray-700"><i class="fas fa-list mr-2"></i>Active Monitors</h2>
                     <div id="monitored-sites-list" class="space-y-3">
                         <p class="text-gray-500">Loading sites...</p>
                     </div>
                 </div>
+
+                <!-- Recent Alerts -->
                 <div class="bg-white p-6 rounded-lg shadow-md">
                     <h2 class="text-xl font-semibold mb-4 text-gray-700"><i class="fas fa-bell mr-2"></i>Recent Change Log</h2>
                     <div id="alerts-list" class="space-y-2">
@@ -65,20 +87,23 @@
     </div>
 
     <script>
-        // The API URL now points to our Netlify Functions
+        // The API URL for our Netlify Functions
         const API_URL = '/.netlify/functions';
 
+        // --- MAIN LOGIC ---
         document.addEventListener('DOMContentLoaded', () => {
             fetchMonitoredSites();
         });
 
+        // --- FORM SUBMISSION ---
         document.getElementById('monitor-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
+            e.preventDefault(); // Stop the form from reloading the page
             const submitBtn = document.getElementById('submit-btn');
             const btnText = document.getElementById('btn-text');
             const btnLoader = document.getElementById('btn-loader');
             const feedback = document.getElementById('form-feedback');
 
+            // Show loading state
             submitBtn.disabled = true;
             btnText.textContent = 'Adding...';
             btnLoader.classList.remove('hidden');
@@ -98,9 +123,9 @@
                 if (response.ok) {
                     feedback.textContent = `✅ ${result.message}`;
                     feedback.className = 'mt-4 text-center text-green-600 font-semibold';
-                    e.target.reset();
-                    showPreview(data.url);
-                    fetchMonitoredSites();
+                    e.target.reset(); // Clear the form
+                    showPreview(data.url); // Show the preview
+                    fetchMonitoredSites(); // Refresh the list of sites
                 } else {
                     feedback.textContent = `❌ Error: ${result.error}`;
                     feedback.className = 'mt-4 text-center text-red-600 font-semibold';
@@ -116,6 +141,7 @@
             }
         });
 
+        // --- FETCH AND DISPLAY SITES ---
         async function fetchMonitoredSites() {
             try {
                 const response = await fetch(`${API_URL}/get-sites`);
@@ -126,6 +152,7 @@
                     listContainer.innerHTML = '<p class="text-gray-500">No sites are being monitored yet. Add one to get started!</p>';
                     return;
                 }
+
                 listContainer.innerHTML = sites.map(site => `
                     <div class="flex justify-between items-center p-3 border rounded-lg hover:bg-gray-50 transition">
                         <div>
@@ -133,32 +160,69 @@
                             <p class="text-sm text-gray-500">Last checked: ${new Date(site.last_scanned).toLocaleString()}</p>
                         </div>
                         <div class="flex items-center space-x-3">
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full ${getStatusClass(site.status)}">${site.status}</span>
-                            <button onclick="removeSite('${site.id}')" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button>
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full ${getStatusClass(site.status)}">
+                                ${site.status}
+                            </span>
+                            <button onclick="removeSite('${site.id}')" class="text-red-500 hover:text-red-700">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </div>
                     </div>
                 `).join('');
+
             } catch (error) {
                 console.error("Failed to fetch sites:", error);
-                document.getElementById('monitored-sites-list').innerHTML = '<p class="text-red-500">Failed to load sites. Is the backend running?</p>';
+                document.getElementById('monitored-sites-list').innerHTML = '<p class="text-red-500">Failed to load sites. Check the function logs in Netlify.</p>';
             }
         }
         
+        // --- VISUAL PREVIEW ---
         function showPreview(url) {
             const container = document.getElementById('preview-container');
             const frame = document.getElementById('preview-frame');
+            const previewTitle = container.querySelector('h2');
+
+            // Reset any previous error messages
+            const existingError = container.querySelector('.text-red-500');
+            if (existingError) existingError.remove();
+
+            previewTitle.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Visual Preview (Loading...)';
+            
+            frame.onload = function() {
+                previewTitle.innerHTML = '<i class="fas fa-eye mr-2"></i>Visual Preview';
+            };
+
             frame.src = url;
             container.classList.remove('hidden');
+
+            // Check after a short delay if the iframe was blocked by security headers
+            setTimeout(() => {
+                try {
+                    // A try-catch block is the simplest way to detect a blocked iframe
+                    const location = frame.contentWindow.location.href;
+                } catch (e) {
+                    previewTitle.innerHTML = '<i class="fas fa-eye-slash mr-2 text-red-500"></i>Preview Unavailable';
+                    const errorMsg = document.createElement('p');
+                    errorMsg.className = 'text-sm text-red-500 mt-2';
+                    errorMsg.textContent = 'This website blocks previews for security reasons. Monitoring will still work.';
+                    frame.parentNode.insertBefore(errorMsg, frame.nextSibling);
+                }
+            }, 2000); // Check after 2 seconds
         }
 
+        // --- HELPER FUNCTIONS ---
         function getStatusClass(status) {
-            switch (status) { case 'OK': return 'bg-green-100 text-green-800'; case 'CHANGED': return 'bg-yellow-100 text-yellow-800'; case 'ERROR': return 'bg-red-100 text-red-800'; default: return 'bg-gray-100 text-gray-800'; }
+            switch (status) {
+                case 'OK': return 'bg-green-100 text-green-800';
+                case 'CHANGED': return 'bg-yellow-100 text-yellow-800';
+                case 'ERROR': return 'bg-red-100 text-red-800';
+                default: return 'bg-gray-100 text-gray-800';
+            }
         }
 
-        async function removeSite(id) {
-            if (!confirm("Are you sure?")) return;
-            // Placeholder for delete functionality
-            alert("Delete functionality would call a 'delete-site' function.");
+        function removeSite(id) {
+            // This is a placeholder. The backend for deleting a site is not implemented yet.
+            alert("Delete functionality is not yet implemented. It would call a 'delete-site' function.");
         }
     </script>
 </body>
